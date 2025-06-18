@@ -1,0 +1,107 @@
+?start     : program
+
+program    : declarations*
+
+declarations : fun_decl
+             | var_dec
+             | stmt
+
+
+?stmt      : expr_stmt
+           | print_cmd
+           | if_cmd
+           | for_cmd
+           | while_cmd 
+           | do_while_cmd
+           | block
+           | return_stmt  
+
+do_while_cmd : "do" stmt "while" "(" expr ")" ";" -> do_while
+
+return_stmt : "return" expr? ";"
+
+           
+for_cmd   : "for" "(" for_init for_cond ";" for_incr ")" stmt -> build_for
+for_init  : (var_dec | expr_stmt | ";")
+for_cond  : expr?
+for_incr  : expr?
+
+
+if_cmd     : "if" "(" expr ")" stmt ("else" stmt)?
+
+while_cmd  : "while" "(" expr ")" stmt
+
+print_cmd  : "print" expr ";"
+
+ expr_stmt : expr ";" 
+
+// EXPRESSÕES
+
+block : "{" declarations* "}"
+
+?expr      : assignment
+
+var_dec : "var" VAR type_? ("=" expr)? ";"
+
+fun_decl   : "fun" function
+function: VAR "(" func_params? ")" return_type? block -> function_def
+func_params : param ("," param)*
+param       : VAR type_?
+
+type_   : ":" TYPE_NAME ["?"]
+return_type: "->" TYPE_NAME ["?"]
+
+?assignment: call "." VAR "=" assignment -> setattr
+           | VAR "=" assignment           -> assign
+           | logic_or
+
+
+?logic_or  : logic_or "or" logic_and   -> or_
+           | logic_and
+
+?logic_and : logic_and "and" test      -> and_
+           | test
+
+?test      : test "==" cmp  -> eq
+           | test "!=" cmp  -> ne
+           | cmp
+
+?cmp       : cmp ">" factor   -> gt
+           | cmp "<" factor   -> lt
+           | cmp ">=" factor  -> ge
+           | cmp "<=" factor  -> le
+           | factor
+
+?factor    : factor "+" term  -> add
+           | factor "-" term  -> sub
+           | term
+
+?term      : term "*" call   -> mul
+           | term "/" call   -> div
+           | call
+
+?call      : atom
+           | call "." VAR      -> getatributo
+           | call "(" params ")" -> call
+
+
+?atom      : NUMBER 
+           | BOOL
+           | VAR
+           | STRING
+           | NIL
+           | "(" cmp ")"
+           |"!" atom         -> not_
+           | "-" atom         -> neg
+
+params     : [ expr ("," expr )* ]
+
+BOOL.2     : "true" | "false"
+VAR.1      : /[a-z_]\w*/
+NUMBER     : /([1-9][0-9]*|0)(\.[0-9]+)?/ 
+STRING     : /"[^"]*"/
+NIL.2      : "nil"
+COMMENT    : "//" /[^\n]*/
+TYPE_NAME    : /[a-zA-Z_]\w*/
+
+%ignore /\s/ | COMMENT
